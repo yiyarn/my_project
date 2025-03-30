@@ -17,7 +17,8 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QApplication, QComboBox, QGroupBox, QHBoxLayout,
     QLabel, QMainWindow, QMenuBar, QPushButton,
-    QSizePolicy, QStatusBar, QVBoxLayout, QWidget)
+    QSizePolicy, QStatusBar, QTextEdit, QVBoxLayout,
+    QWidget, QScrollArea)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -35,7 +36,7 @@ class Ui_MainWindow(object):
         font.setPointSize(24)
         font.setBold(True)
         self.titleLabel.setFont(font)
-        self.titleLabel.setAlignment(Qt.AlignCenter)
+        self.titleLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.mainLayout.addWidget(self.titleLabel)
 
@@ -49,8 +50,8 @@ class Ui_MainWindow(object):
         self.operationLayout.setObjectName(u"operationLayout")
         self.imageLabel = QLabel(self.operationGroupBox)
         self.imageLabel.setObjectName(u"imageLabel")
-        self.imageLabel.setAlignment(Qt.AlignCenter)
         self.imageLabel.setMinimumSize(QSize(400, 300))
+        self.imageLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.operationLayout.addWidget(self.imageLabel)
 
@@ -59,24 +60,26 @@ class Ui_MainWindow(object):
 
         self.operationLayout.addWidget(self.loadImageButton)
 
-        self.buttonLayout = QHBoxLayout()
-        self.buttonLayout.setObjectName(u"buttonLayout")
         self.processButton = QPushButton(self.operationGroupBox)
         self.processButton.setObjectName(u"processButton")
 
-        self.buttonLayout.addWidget(self.processButton)
+        self.operationLayout.addWidget(self.processButton)
+
+        self.buttonLayout = QHBoxLayout()
+        self.buttonLayout.setObjectName(u"buttonLayout")
+        self.llmAnalysisButton = QPushButton(self.operationGroupBox)
+        self.llmAnalysisButton.setObjectName(u"llmAnalysisButton")
+
+        self.buttonLayout.addWidget(self.llmAnalysisButton)
 
         self.quitButton = QPushButton(self.operationGroupBox)
         self.quitButton.setObjectName(u"quitButton")
 
         self.buttonLayout.addWidget(self.quitButton)
 
-
         self.operationLayout.addLayout(self.buttonLayout)
 
-
         self.leftLayout.addWidget(self.operationGroupBox)
-
 
         self.contentLayout.addLayout(self.leftLayout)
 
@@ -99,27 +102,43 @@ class Ui_MainWindow(object):
 
         self.detectionResultLayout.addWidget(self.targetSelector)
 
-        self.objectTypeLabel = QLabel(self.detectionResultGroupBox)
-        self.objectTypeLabel.setObjectName(u"objectTypeLabel")
+        # 创建一个 QScrollArea 用于检测结果
+        self.scrollArea = QScrollArea(self.detectionResultGroupBox)
+        self.scrollArea.setWidgetResizable(True)  # 允许内容调整大小
+        self.scrollArea.setMinimumHeight(100)  # 设置最小高度
+        self.scrollArea.setMaximumHeight(200)  # 设置最大高度，防止过长
+
+        # 创建一个 QWidget 作为滚动区域的内容
+        self.scrollWidget = QWidget()
+        self.scrollLayout = QVBoxLayout(self.scrollWidget)
+        self.scrollLayout.setAlignment(Qt.AlignTop)
+
+        # 添加检测结果的标签到滚动区域
         font1 = QFont()
         font1.setFamilies([u"Arial"])
         font1.setPointSize(12)
+
+        self.objectTypeLabel = QLabel(self.scrollWidget)
+        self.objectTypeLabel.setObjectName(u"objectTypeLabel")
         self.objectTypeLabel.setFont(font1)
+        self.objectTypeLabel.setWordWrap(True)  # 启用自动换行
+        self.scrollLayout.addWidget(self.objectTypeLabel)
 
-        self.detectionResultLayout.addWidget(self.objectTypeLabel)
-
-        self.confidenceLabel = QLabel(self.detectionResultGroupBox)
+        self.confidenceLabel = QLabel(self.scrollWidget)
         self.confidenceLabel.setObjectName(u"confidenceLabel")
         self.confidenceLabel.setFont(font1)
+        self.confidenceLabel.setWordWrap(True)  # 启用自动换行
+        self.scrollLayout.addWidget(self.confidenceLabel)
 
-        self.detectionResultLayout.addWidget(self.confidenceLabel)
-
-        self.positionLabel = QLabel(self.detectionResultGroupBox)
+        self.positionLabel = QLabel(self.scrollWidget)
         self.positionLabel.setObjectName(u"positionLabel")
         self.positionLabel.setFont(font1)
+        self.positionLabel.setWordWrap(True)  # 启用自动换行
+        self.scrollLayout.addWidget(self.positionLabel)
 
-        self.detectionResultLayout.addWidget(self.positionLabel)
-
+        # 将 scrollWidget 设置为 scrollArea 的内容
+        self.scrollArea.setWidget(self.scrollWidget)
+        self.detectionResultLayout.addWidget(self.scrollArea)
 
         self.rightLayout.addWidget(self.detectionResultGroupBox)
 
@@ -131,25 +150,24 @@ class Ui_MainWindow(object):
         self.lightLayout.setObjectName(u"lightLayout")
         self.greenLightLabel = QLabel(self.warningGroupBox)
         self.greenLightLabel.setObjectName(u"greenLightLabel")
-        self.greenLightLabel.setAlignment(Qt.AlignCenter)
         self.greenLightLabel.setMinimumSize(QSize(40, 40))
+        self.greenLightLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.lightLayout.addWidget(self.greenLightLabel)
 
         self.yellowLightLabel = QLabel(self.warningGroupBox)
         self.yellowLightLabel.setObjectName(u"yellowLightLabel")
-        self.yellowLightLabel.setAlignment(Qt.AlignCenter)
         self.yellowLightLabel.setMinimumSize(QSize(40, 40))
+        self.yellowLightLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.lightLayout.addWidget(self.yellowLightLabel)
 
         self.redLightLabel = QLabel(self.warningGroupBox)
         self.redLightLabel.setObjectName(u"redLightLabel")
-        self.redLightLabel.setAlignment(Qt.AlignCenter)
         self.redLightLabel.setMinimumSize(QSize(40, 40))
+        self.redLightLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.lightLayout.addWidget(self.redLightLabel)
-
 
         self.warningLayout.addLayout(self.lightLayout)
 
@@ -159,18 +177,21 @@ class Ui_MainWindow(object):
 
         self.warningLayout.addWidget(self.llmAnalysisLabel)
 
+        self.llmResultTextEdit = QTextEdit(self.warningGroupBox)
+        self.llmResultTextEdit.setObjectName(u"llmResultTextEdit")
+
+        self.warningLayout.addWidget(self.llmResultTextEdit)
 
         self.rightLayout.addWidget(self.warningGroupBox)
 
-
         self.contentLayout.addLayout(self.rightLayout)
-
 
         self.mainLayout.addLayout(self.contentLayout)
 
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(MainWindow)
         self.menubar.setObjectName(u"menubar")
+        self.menubar.setGeometry(QRect(0, 0, 1280, 33))
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QStatusBar(MainWindow)
         self.statusbar.setObjectName(u"statusbar")
@@ -188,6 +209,7 @@ class Ui_MainWindow(object):
         self.imageLabel.setText(QCoreApplication.translate("MainWindow", u"\u56fe\u7247\u663e\u793a\u533a\u57df", None))
         self.loadImageButton.setText(QCoreApplication.translate("MainWindow", u"\u70b9\u51fb\u4e0a\u4f20\u56fe\u7247", None))
         self.processButton.setText(QCoreApplication.translate("MainWindow", u"\u70b9\u51fb\u8fdb\u884c\u53bb\u96fe\u548c\u76ee\u6807\u68c0\u6d4b", None))
+        self.llmAnalysisButton.setText(QCoreApplication.translate("MainWindow", u"\u667a\u80fd\u5206\u6790", None))
         self.quitButton.setText(QCoreApplication.translate("MainWindow", u"\u9000\u51fa", None))
         self.confidenceChartGroupBox.setTitle(QCoreApplication.translate("MainWindow", u"\u7f6e\u4fe1\u5ea6\u5206\u5e03", None))
         self.detectionResultGroupBox.setTitle(QCoreApplication.translate("MainWindow", u"\u68c0\u6d4b\u7ed3\u679c", None))
@@ -200,4 +222,3 @@ class Ui_MainWindow(object):
         self.redLightLabel.setText("")
         self.llmAnalysisLabel.setText(QCoreApplication.translate("MainWindow", u"\u9884\u8b66\u72b6\u6001: ", None))
     # retranslateUi
-

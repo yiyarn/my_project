@@ -15,26 +15,23 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="mainLayout">
-    <!-- 大标题 -->
     <item>
      <widget class="QLabel" name="titleLabel">
-      <property name="text">
-       <string>无人机图像去雾与目标检测一体化系统</string>
-      </property>
       <property name="font">
        <font>
         <family>Microsoft YaHei</family>
         <pointsize>24</pointsize>
-        <weight>75</weight>
         <bold>true</bold>
        </font>
       </property>
+      <property name="text">
+       <string>无人机图像去雾与目标检测一体化系统</string>
+      </property>
       <property name="alignment">
-       <set>Qt::AlignCenter</set>
+       <set>Qt::AlignmentFlag::AlignCenter</set>
       </property>
      </widget>
     </item>
-    <!-- 左右布局 -->
     <item>
      <layout class="QHBoxLayout" name="contentLayout">
       <item>
@@ -47,17 +44,17 @@
           <layout class="QVBoxLayout" name="operationLayout">
            <item>
             <widget class="QLabel" name="imageLabel">
-             <property name="text">
-              <string>图片显示区域</string>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignCenter</set>
-             </property>
              <property name="minimumSize">
               <size>
                <width>400</width>
                <height>300</height>
               </size>
+             </property>
+             <property name="text">
+              <string>图片显示区域</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignmentFlag::AlignCenter</set>
              </property>
             </widget>
            </item>
@@ -69,11 +66,18 @@
             </widget>
            </item>
            <item>
+            <widget class="QPushButton" name="processButton">
+             <property name="text">
+              <string>点击进行去雾和目标检测</string>
+             </property>
+            </widget>
+           </item>
+           <item>
             <layout class="QHBoxLayout" name="buttonLayout">
              <item>
-              <widget class="QPushButton" name="processButton">
+              <widget class="QPushButton" name="llmAnalysisButton">
                <property name="text">
-                <string>点击进行去雾和目标检测</string>
+                <string>智能分析</string>
                </property>
               </widget>
              </item>
@@ -93,7 +97,6 @@
       </item>
       <item>
        <layout class="QVBoxLayout" name="rightLayout">
-        <!-- 置信度分布图 -->
         <item>
          <widget class="QGroupBox" name="confidenceChartGroupBox">
           <property name="title">
@@ -102,7 +105,6 @@
           <layout class="QVBoxLayout" name="confidenceChartLayout"/>
          </widget>
         </item>
-        <!-- 检测结果 -->
         <item>
          <widget class="QGroupBox" name="detectionResultGroupBox">
           <property name="title">
@@ -120,48 +122,82 @@
             </widget>
            </item>
            <item>
-            <widget class="QLabel" name="objectTypeLabel">
-             <property name="text">
-              <string>目标类型: </string>
+            <widget class="QScrollArea" name="scrollArea">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>100</height>
+              </size>
              </property>
-             <property name="font">
-              <font>
-               <family>Arial</family>
-               <pointsize>12</pointsize>
-              </font>
+             <property name="maximumSize">
+              <size>
+               <width>16777215</width>
+               <height>200</height>
+              </size>
              </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="confidenceLabel">
-             <property name="text">
-              <string>置信度: </string>
+             <property name="widgetResizable">
+              <bool>true</bool>
              </property>
-             <property name="font">
-              <font>
-               <family>Arial</family>
-               <pointsize>12</pointsize>
-              </font>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="positionLabel">
-             <property name="text">
-              <string>目标位置: </string>
-             </property>
-             <property name="font">
-              <font>
-               <family>Arial</family>
-               <pointsize>12</pointsize>
-              </font>
-             </property>
+             <widget class="QWidget" name="scrollWidget">
+              <layout class="QVBoxLayout" name="scrollLayout">
+               <property name="alignment">
+                <set>Qt::AlignmentFlag::AlignTop</set>
+               </property>
+               <item>
+                <widget class="QLabel" name="objectTypeLabel">
+                 <property name="font">
+                  <font>
+                   <family>Arial</family>
+                   <pointsize>12</pointsize>
+                  </font>
+                 </property>
+                 <property name="text">
+                  <string>目标类型: </string>
+                 </property>
+                 <property name="wordWrap">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="confidenceLabel">
+                 <property name="font">
+                  <font>
+                   <family>Arial</family>
+                   <pointsize>12</pointsize>
+                  </font>
+                 </property>
+                 <property name="text">
+                  <string>置信度: </string>
+                 </property>
+                 <property name="wordWrap">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="positionLabel">
+                 <property name="font">
+                  <font>
+                   <family>Arial</family>
+                   <pointsize>12</pointsize>
+                  </font>
+                 </property>
+                 <property name="text">
+                  <string>目标位置: </string>
+                 </property>
+                 <property name="wordWrap">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
             </widget>
            </item>
           </layout>
          </widget>
         </item>
-        <!-- 预警提示 -->
         <item>
          <widget class="QGroupBox" name="warningGroupBox">
           <property name="title">
@@ -172,49 +208,49 @@
             <layout class="QHBoxLayout" name="lightLayout">
              <item>
               <widget class="QLabel" name="greenLightLabel">
-               <property name="text">
-                <string/>
-               </property>
-               <property name="alignment">
-                <set>Qt::AlignCenter</set>
-               </property>
                <property name="minimumSize">
                 <size>
                  <width>40</width>
                  <height>40</height>
                 </size>
+               </property>
+               <property name="text">
+                <string/>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignmentFlag::AlignCenter</set>
                </property>
               </widget>
              </item>
              <item>
               <widget class="QLabel" name="yellowLightLabel">
-               <property name="text">
-                <string/>
-               </property>
-               <property name="alignment">
-                <set>Qt::AlignCenter</set>
-               </property>
                <property name="minimumSize">
                 <size>
                  <width>40</width>
                  <height>40</height>
                 </size>
+               </property>
+               <property name="text">
+                <string/>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignmentFlag::AlignCenter</set>
                </property>
               </widget>
              </item>
              <item>
               <widget class="QLabel" name="redLightLabel">
-               <property name="text">
-                <string/>
-               </property>
-               <property name="alignment">
-                <set>Qt::AlignCenter</set>
-               </property>
                <property name="minimumSize">
                 <size>
                  <width>40</width>
                  <height>40</height>
                 </size>
+               </property>
+               <property name="text">
+                <string/>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignmentFlag::AlignCenter</set>
                </property>
               </widget>
              </item>
@@ -222,16 +258,19 @@
            </item>
            <item>
             <widget class="QLabel" name="llmAnalysisLabel">
-             <property name="text">
-              <string>预警状态: </string>
-             </property>
              <property name="font">
               <font>
                <family>Arial</family>
                <pointsize>12</pointsize>
               </font>
              </property>
+             <property name="text">
+              <string>预警状态: </string>
+             </property>
             </widget>
+           </item>
+           <item>
+            <widget class="QTextEdit" name="llmResultTextEdit"/>
            </item>
           </layout>
          </widget>
@@ -242,7 +281,16 @@
     </item>
    </layout>
   </widget>
-  <widget class="QMenuBar" name="menubar"/>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1280</width>
+     <height>33</height>
+    </rect>
+   </property>
+  </widget>
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
  <resources/>
