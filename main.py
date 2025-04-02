@@ -1,8 +1,8 @@
 import sys
 import cv2
-import requests
 import torch
 import collections
+from llm_module import analyze_with_llm, LLMQueryThread  # 从 LLM 模块中导入所需功能
 
 from PySide6.QtWidgets import QApplication, QMainWindow, QFileDialog, QMessageBox, QHBoxLayout, QVBoxLayout, QWidget, QComboBox, QTextEdit, QSizePolicy, QLabel, QDialog, QScrollArea
 from PySide6.QtCore import Qt, QEvent, QThread, Signal
@@ -14,45 +14,12 @@ from ultralytics import YOLO
 from dehaze import *
 from models import *
 
-
-OPENROUTER_API_KEY = "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"
-
-# 发送调用请求
-def query_llm(prompt):
-    url = "https://openrouter.ai/api/v1/chat/completions"
-    headers = {
-        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    data = {
-        "model": "qwen/qwen2.5-vl-3b-instruct:free",
-        "messages": [{"role": "user", "content": prompt}],
-        "temperature": 0.7
-    }
-
-    response = requests.post(url, json=data, headers=headers)
-    if response.status_code == 200:
-        return response.json()["choices"][0]["message"]["content"]
-    else:
-        return f"Error: {response.status_code}, {response.text}"
-
-# LLM的另外的线程
-class LLMQueryThread(QThread):
-    result_signal = Signal(str)
-
-    def __init__(self, prompt):
-        super().__init__()
-        self.prompt = prompt
-
-    def run(self):
-        result = query_llm(self.prompt)
-        self.result_signal.emit(result)
-
 # 主窗口
 class MainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
+        self.OPENROUTER_API_KEY ="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"
 
         # 设置窗口背景颜色、大小
         palette = self.palette()
@@ -60,7 +27,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.setPalette(palette)
         self.resize(1280, 720)
 
-        # 加载YOLO模型、图片
+        # 加载 YOLO 模型、图片
         self.model_path = r"./model/yolov8n.pt"
         self.model = YOLO(self.model_path)
         self.gray_light = QPixmap("./images/gray_light.png")
@@ -155,7 +122,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.show_original_image()
             return True
         return super().eventFilter(obj, event)
-    
+
     # 初始化去雾模型
     def init_dehaze_model(self):
         try:
@@ -163,10 +130,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 'model_name': 'dehazeformer-b',
                 'checkpoint_path': r'./model/dehazeformer-b.pth'
             }
-            
             self.dehaze_model = eval(model_config['model_name'].replace('-', '_'))()
             self.dehaze_model.cuda()
-            
             checkpoint = torch.load(model_config['checkpoint_path'])
             state_dict = checkpoint['state_dict']
             new_state_dict = collections.OrderedDict()
@@ -175,7 +140,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 new_state_dict[name] = v
             self.dehaze_model.load_state_dict(new_state_dict)
             self.dehaze_model.eval()
-            
         except Exception as e:
             QMessageBox.critical(self, "错误", f"去雾模型初始化失败: {str(e)}")
             self.close()
@@ -385,45 +349,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.llmAnalysisLabel.setText(light_status)
         self.light_status = light_status
 
-    # 调LLM进行分析
+    # 调用 LLM 进行分析
     def analyze_with_llm(self):
-        if not hasattr(self, 'detection_results'):
-            QMessageBox.warning(self, "警告", "请先进行图像处理！")
-            return
+        analyze_with_llm(self, self.OPENROUTER_API_KEY)  # 调用 llm_module 中的 analyze_with_llm 函数
 
-        self.llmResultTextEdit.setText("分析中...")
-        self.loading_label.show()
-
-        self.loading_movie.stop()
-        self.loading_movie.jumpToFrame(0)
-        self.loading_movie.start()
-        QApplication.processEvents()
-
-        num_objects = len(self.detection_results)
-        object_types = [res["type"] for res in self.detection_results]
-        confidences = [res["confidence"] for res in self.detection_results]
-        light_status = self.light_status
-
-        prompt = f"""
-        你是一个水源地保护系统的分析助手。以下是无人机拍摄的图像分析结果：
-
-        - 检测到的目标数量: {num_objects}
-        - 目标类型: {', '.join(set(object_types))}
-        - 置信度: {', '.join([f'{conf:.2f}%' for conf in confidences])}
-        - 预警提示: {light_status}
-
-        请分析：
-        1. 根据这四种分析结果，你判断当前情况下是否发现钓鱼行为？
-        2. 图中被识别出的目标的行为可能对水源地造成什么破坏？
-        3. 建议采取什么紧急措施来防止破坏？
-
-        请用简洁明了的语言回答，确保用户能够快速理解并采取行动。
-        """
-
-        self.llm_thread = LLMQueryThread(prompt)
-        self.llm_thread.result_signal.connect(self.on_llm_analysis_finished)
-        self.llm_thread.start()
-
+    # LLM 分析完成后的回调函数
     def on_llm_analysis_finished(self, result):
         self.llmResultTextEdit.setText(result)
         self.loading_movie.stop()
