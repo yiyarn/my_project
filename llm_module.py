@@ -1,11 +1,9 @@
 import base64
 import requests
 import cv2
-from io import BytesIO
-from PySide6.QtWidgets import QApplication, QMainWindow, QFileDialog, QMessageBox, QHBoxLayout, QVBoxLayout, QWidget, QComboBox, QTextEdit, QSizePolicy, QLabel, QDialog, QScrollArea
-from PySide6.QtCore import Qt, QEvent, QThread, Signal
-from PySide6.QtGui import QImage, QPixmap, QPainter, QPalette, QColor, QMovie
-from PySide6.QtCharts import QChart, QLineSeries, QScatterSeries, QBarCategoryAxis, QChartView, QValueAxis
+from PySide6.QtCore import QBuffer, QByteArray, QThread, Signal
+from PySide6.QtGui import QImage, QPixmap
+from PySide6.QtWidgets import QMessageBox, QApplication
 from project.dehaze import dehaze_image
 
 def query_llm(prompt, api_key):
@@ -26,21 +24,25 @@ def query_llm(prompt, api_key):
         return f"Error: {response.status_code}, {response.text}"
 
 def image_to_base64(image):
-    buffered = BytesIO()
-    image.save(buffered, format="JPEG")  # 将QImage保存为JPEG格式
-    img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
+    # 使用 QByteArray 和 QBuffer 保存图像
+    byte_array = QByteArray()
+    buffer = QBuffer(byte_array)
+    buffer.open(QBuffer.WriteOnly)
+    image.save(buffer, "JPEG")  # 保存为 JPEG 格式
+    buffer.close()
+    img_str = byte_array.toBase64().data().decode("utf-8")
     return img_str
 
-# LLM的另外的线程
 class LLMQueryThread(QThread):
     result_signal = Signal(str)
 
-    def __init__(self, prompt):
+    def __init__(self, prompt, api_key):
         super().__init__()
         self.prompt = prompt
+        self.api_key = api_key
 
     def run(self):
-        result = query_llm(self.prompt)
+        result = query_llm(self.prompt, self.api_key)  # 传递 api_key
         self.result_signal.emit(result)
 
 def analyze_with_llm(self, api_key):
@@ -80,7 +82,7 @@ def analyze_with_llm(self, api_key):
     q_image_annotated = QImage(annotated_image_rgb.data, w, h, bytes_per_line, QImage.Format_RGB888)
     pixmap_annotated = QPixmap.fromImage(q_image_annotated)
 
-    # 转换为Base64编码
+    # 转换为 Base64 编码
     original_image_base64 = image_to_base64(pixmap_original.toImage())
     annotated_image_base64 = image_to_base64(pixmap_annotated.toImage())
 
@@ -113,7 +115,6 @@ def analyze_with_llm(self, api_key):
         {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{annotated_image_base64}"}}
     ]
 
-    self.llm_thread = LLMQueryThread(prompt)
+    self.llm_thread = LLMQueryThread(prompt, api_key)  # 传递 api_key
     self.llm_thread.result_signal.connect(self.on_llm_analysis_finished)
     self.llm_thread.start()
-
