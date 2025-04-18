@@ -2,32 +2,27 @@ import sys
 import cv2
 import torch
 import collections
-from llm_module import analyze_with_llm, LLMQueryThread  # 从 LLM 模块中导入所需功能
-
+from llm_module import analyze_with_llm, LLMQueryThread
 from PySide6.QtWidgets import QApplication, QMainWindow, QFileDialog, QMessageBox, QHBoxLayout, QVBoxLayout, QWidget, QComboBox, QTextEdit, QSizePolicy, QLabel, QDialog, QScrollArea
 from PySide6.QtCore import Qt, QEvent, QThread, Signal
 from PySide6.QtGui import QImage, QPixmap, QPainter, QPalette, QColor, QMovie
 from PySide6.QtCharts import QChart, QLineSeries, QScatterSeries, QBarCategoryAxis, QChartView, QValueAxis
 from ui_mainwindow import Ui_MainWindow
-
 from ultralytics import YOLO
 from dehaze import *
 from models import *
 
-# 主窗口
 class MainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        self.OPENROUTER_API_KEY ="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"
+        self.OPENROUTER_API_KEY = "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"
 
-        # 设置窗口背景颜色、大小
         palette = self.palette()
         palette.setColor(QPalette.Window, QColor("#E6F0FA"))
         self.setPalette(palette)
         self.resize(1280, 720)
 
-        # 加载 YOLO 模型、图片
         self.model_path = r"./model/yolov8n.pt"
         self.model = YOLO(self.model_path)
         self.gray_light = QPixmap("./images/gray_light.png")
@@ -59,10 +54,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.llmResultTextEdit.setReadOnly(True)
         self.llmResultTextEdit.setLineWrapMode(QTextEdit.WidgetWidth)
         self.llmResultTextEdit.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        # Enable HTML rendering for Markdown content
+        self.llmResultTextEdit.setAcceptRichText(True)
         self.dehaze_model = None
         self.init_dehaze_model()
 
-        # 美化按钮
         self.loadImageButton.setStyleSheet("""
             QPushButton {
                 background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #dfdfea, stop: 1 #d5d5e0);
@@ -116,14 +112,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             }
         """)
 
-    # 事件过滤
     def eventFilter(self, obj, event):
         if obj == self.imageLabel and event.type() == QEvent.MouseButtonPress:
             self.show_original_image()
             return True
         return super().eventFilter(obj, event)
 
-    # 初始化去雾模型
     def init_dehaze_model(self):
         try:
             model_config = {
@@ -144,7 +138,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             QMessageBox.critical(self, "错误", f"去雾模型初始化失败: {str(e)}")
             self.close()
 
-    # 显示原图
     def show_original_image(self):
         if hasattr(self, 'detection_results'):
             image = cv2.imread(self.image_path)
@@ -175,7 +168,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         else:
             QMessageBox.warning(self, "警告", "请先进行图像处理！")
 
-    # 加载图片
     def load_image(self):
         file_name, _ = QFileDialog.getOpenFileName(self, "上传图片", "", "Images (*.png *.jpg *.jpeg *.bmp);;All Files (*)")
         if file_name:
@@ -183,7 +175,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             pixmap = QPixmap(file_name)
             self.imageLabel.setPixmap(pixmap.scaled(400, 300, Qt.KeepAspectRatio, Qt.SmoothTransformation))
 
-    # 处理图片
     def process_image(self):
         if not hasattr(self, 'image_path'):
             QMessageBox.warning(self, "警告", "请先加载图片！")
@@ -223,7 +214,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.update_display()
         self.set_warning_lights(confidences)
 
-    # 更新显示内容
     def update_display(self):
         selected_type = self.targetSelector.currentText()
         if selected_type == "全部类型":
@@ -246,7 +236,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.update_confidence_chart(filtered_results)
         self.update_image_display(filtered_results)
 
-    # 更新表格
     def update_confidence_chart(self, filtered_results):
         chart = QChart()
         if not filtered_results:
@@ -309,7 +298,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 widget.deleteLater()
         self.confidenceChartLayout.addWidget(chart_view)
 
-    # 更新图像显示
     def update_image_display(self, filtered_results):
         image = cv2.imread(self.image_path)
         dehazed_image = dehaze_image(image, self.dehaze_model)
@@ -329,7 +317,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         pixmap = QPixmap.fromImage(q_image)
         self.imageLabel.setPixmap(pixmap.scaled(400, 300, Qt.KeepAspectRatio, Qt.SmoothTransformation))
 
-    # 更新指示灯
     def set_warning_lights(self, confidences):
         self.greenLightLabel.setPixmap(QPixmap())
         self.yellowLightLabel.setPixmap(QPixmap())
@@ -349,13 +336,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.llmAnalysisLabel.setText(light_status)
         self.light_status = light_status
 
-    # 调用 LLM 进行分析
     def analyze_with_llm(self):
-        analyze_with_llm(self, self.OPENROUTER_API_KEY)  # 调用 llm_module 中的 analyze_with_llm 函数
+        analyze_with_llm(self, self.OPENROUTER_API_KEY)
 
-    # LLM 分析完成后的回调函数
     def on_llm_analysis_finished(self, result):
-        self.llmResultTextEdit.setText(result)
+        # Set.HTML content to QTextEdit for Markdown rendering
+        self.llmResultTextEdit.setHtml(result)
         self.loading_movie.stop()
         self.loading_label.hide()
 
